@@ -1,0 +1,2 @@
+% This is a basic set of scripts to generate a point set from a 2D polygon,
+% offset it, and then register it back using the ICP algorithm.

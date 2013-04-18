@@ -1,18 +1,18 @@
 %% define shape to register
-polyshape = [1, 1; 2, 2; 4, 1];
+polyshape = [100, 100; 120, 120; 150, 100];     % units are mm, say
 origin = mean(polyshape,1);
 origintfm = [1, 0, origin(1); 0, 1, origin(2); 0, 0, 1];
 
 %% define point set
-npoints = 1;
-%truepointset = randompointset(polyshape, npoints);
+npoints = 10;
+truepointset = randompointset(polyshape, npoints);
 acqpointset = truepointset;
 
 %% simulate initial estimate
-maxtransoffset = 0.5;					% units
-maxrotoffset = 20;						% degrees
+maxtransoffset = 0.5;                           % mm
+maxrotoffset = 10;                              % degrees
 
-rtr = unit((rand(2,1)*2)-1)*maxtransoffset;
+rtr = unitise((rand(2,1)*2)-1)*maxtransoffset;
 transtfm = [1, 0, rtr(1); 0, 1, rtr(2); 0, 0, 1];
 
 rangle = ((rand*2)-1)*maxrotoffset;
@@ -21,21 +21,27 @@ rottfm = [cosd(rangle), -sind(rangle), 0; sind(rangle), cosd(rangle), 0;...
 
 % generate initial estimate
 initialtfm = origintfm*transtfm*rottfm*inv(origintfm);
-
 initialpointset = transformpoints(acqpointset, initialtfm);
 
 %% register initial estimate
 regtfm = initialtfm;					% start at initial transform
 
 % find set of closest points
-closestpointset = closestpoints(transformpoints(acqpointset,regtfm),...
-	polyshape);
+[closestpointset, dists] = ...
+    getclosestpointset(transformpoints(acqpointset, regtfm), polyshape);
+rmse = sqrt(mean(dists.^2));
 
-%% plot:
-margin = 3;
+% find transform that minimises rmse
+
+% set regtfm accordingly
+
+%% plot
+margin = 15;
 figure(1);
 clf
 hold on
+grid on
+axis equal
 xlim([min(polyshape(:,1))-margin, max(polyshape(:,1))+margin]);
 ylim([min(polyshape(:,2))-margin, max(polyshape(:,2))+margin]);
 
@@ -55,5 +61,5 @@ plot(initialpointset(:,1), initialpointset(:,2), 'o','markerfacecolor','r',...
 	'markeredgecolor','none');
 
 % closest point set
-plot(closestpointset(:,1), closestpointset(:,2), 'o','markerfacecolor','b',...
+plot(closestpointset(:,1), closestpointset(:,2), 'o','markerfacecolor','m',...
 	'markeredgecolor','none');
