@@ -1,0 +1,23 @@
+function [minrmsetfm] = minrmse(regpointset, closepointset)
+initialguess = [0,0,0];
+[rottransvec] = fminsearch(@(rottransvec) ...
+	calcrmse(regpointset,closepointset,rottransvec),...
+	initialguess);
+rotangle = rottransvec(1);
+transl = rottransvec(2:3);
+minrmsetfm = [cosd(rotangle), -sind(rotangle), transl(1);...
+	sind(rotangle), cosd(rotangle), transl(2);...
+	0, 0, 1];
+end
+
+function [rmse] = calcrmse(initpointset, closepointset, rottransvec)
+rotangle = rottransvec(1);
+transl = rottransvec(2:3);
+arbpointset = transformpoints(initpointset,...
+	[cosd(rotangle), -sind(rotangle), transl(1);...
+	sind(rotangle), cosd(rotangle), transl(2);...
+	0, 0, 1]);
+errorvecs = (arbpointset - closepointset);
+errormags = sqrt(errorvecs(:,1).^2 + errorvecs(:,2).^2);
+rmse = sqrt(mean(errormags.^2));
+end
