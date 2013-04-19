@@ -4,9 +4,9 @@ origin = mean(polyshape,1);
 origintfm = [1, 0, origin(1); 0, 1, origin(2); 0, 0, 1];
 
 %% define point set
-npoints = 3;
-truepointset = randompointset(polyshape, npoints);
-%truepointset = polyshape;
+npoints = 5;
+%truepointset = randompointset(polyshape, npoints);
+truepointset = polyshape;
 acqpointset = truepointset;
 
 %% simulate initial estimate
@@ -25,12 +25,15 @@ initialtfm = origintfm * transtfm * rottfm * inv(origintfm);
 initialpointset = transformpoints(acqpointset, initialtfm);
 
 regtfm = initialtfm; % start at initial transform
-% set registering point set
-registeringpointset = transformpoints(acqpointset, regtfm);
+
+% set reg point set
+regpointset = transformpoints(acqpointset, regtfm);
+% set regshape (for plotting purposes)
+regshape = transformpoints(polyshape,regtfm);
 
 % find set of closest points
 [closestpointset, dists] = ...
-	getclosestpointset(registeringpointset, polyshape);
+	getclosestpointset(regpointset, polyshape);
 % update rmse values
 currentrmse = sqrt(mean(dists.^2));
 
@@ -45,18 +48,18 @@ xlim([min(polyshape(:,1))-margin, max(polyshape(:,1))+margin]);
 ylim([min(polyshape(:,2))-margin, max(polyshape(:,2))+margin]);
 
 % shape
-hmodel = plot([polyshape(:,1);polyshape(1,1)],...
+hshape = plot([polyshape(:,1);polyshape(1,1)],...
 	[polyshape(:,2);polyshape(1,2)],origin(1),origin(2),'+');
 
 % true point set
 htruepts = plot(truepointset(:,1),truepointset(:,2),...
 	'o','markerfacecolor','g','markeredgecolor','none');
 
-% registering point set
-hregpts = plot(registeringpointset(:,1),registeringpointset(:,2),...
+% reg point set
+hregpts = plot(regpointset(:,1),regpointset(:,2),...
 	'o','markerfacecolor','r','markeredgecolor','none');
-set(hregpts,'xdatasource','registeringpointset(:,1)',...
-	'ydatasource','registeringpointset(:,2)');
+set(hregpts,'xdatasource','regpointset(:,1)',...
+	'ydatasource','regpointset(:,2)');
 
 % closest point set
 hclosepts = plot(closestpointset(:,1),closestpointset(:,2),...
@@ -64,26 +67,35 @@ hclosepts = plot(closestpointset(:,1),closestpointset(:,2),...
 set(hclosepts,'xdatasource','closestpointset(:,1)',...
 	'ydatasource','closestpointset(:,2)');
 
+% reg shape
+hregshape = plot([regshape(:,1);regshape(1,1)],...
+	[regshape(:,2);regshape(1,2)],'r');
+set(hregshape,'xdatasource','[regshape(:,1);regshape(1,1)]',...
+	'ydatasource','[regshape(:,2);regshape(1,2)]');
+
 linkdata off
 
 %% register
-maxniter = 200; % set maximum number of ICP iterations before dropout
+maxniter = 20; % set maximum number of ICP iterations before dropout
 lastrmse = 100; % something high
 itern = 1;
 while ((lastrmse - currentrmse) > 0.1 && itern < maxniter)
 	% find transform that minimises rmse
-	minrmsetfm = minrmse(registeringpointset,closestpointset);
+	minrmsetfm = minrmse(regpointset,closestpointset);
 	% set regtfm accordingly
 	regtfm = minrmsetfm * regtfm;
-	% update registering point set
-	registeringpointset = transformpoints(acqpointset,regtfm);
+	% update reg point set and shape
+	regpointset = transformpoints(acqpointset,regtfm);
+	regshape = transformpoints(polyshape,regtfm);
 	% find set of closest points
 	[closestpointset,dists] = ...
-		getclosestpointset(registeringpointset,polyshape);
+		getclosestpointset(regpointset,polyshape);
 	% update rmse values
 	lastrmse = currentrmse;
 	currentrmse = sqrt(mean(dists.^2));
 	refreshdata
 	itern = itern + 1;
-	pause(0.5)
+	pause(0.05)
 end
+
+fprintf('The current RMSE is %f\n',currentrmse)
