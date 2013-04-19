@@ -22,20 +22,10 @@ rottfm = [cosd(rangle), -sind(rangle), 0; sind(rangle), cosd(rangle), 0;...
 
 % generate initial estimate
 initialtfm = origintfm * transtfm * rottfm * inv(origintfm);
-initialpointset = transformpoints(acqpointset, initialtfm);
 
-regtfm = initialtfm; % start at initial transform
-
-% set reg point set
+regtfm = initialtfm;
 regpointset = transformpoints(acqpointset, regtfm);
-% set regshape (for plotting purposes)
-regshape = transformpoints(polyshape,regtfm);
-
-% find set of closest points
-[closestpointset, dists] = ...
-	getclosestpointset(regpointset, polyshape);
-% update rmse values
-currentrmse = sqrt(mean(dists.^2));
+regshape = transformpoints(polyshape, regtfm);
 
 %% plot
 margin = 15;
@@ -74,28 +64,16 @@ set(hregshape,'xdatasource','[regshape(:,1);regshape(1,1)]',...
 	'ydatasource','[regshape(:,2);regshape(1,2)]');
 
 linkdata off
-
+pause(0.5)
 %% register
-maxniter = 20; % set maximum number of ICP iterations before dropout
-lastrmse = 100; % something high
-itern = 1;
-while ((lastrmse - currentrmse) > 0.1 && itern < maxniter)
-	% find transform that minimises rmse
-	minrmsetfm = minrmse(regpointset,closestpointset);
-	% set regtfm accordingly
-	regtfm = minrmsetfm * regtfm;
-	% update reg point set and shape
-	regpointset = transformpoints(acqpointset,regtfm);
-	regshape = transformpoints(polyshape,regtfm);
-	% find set of closest points
-	[closestpointset,dists] = ...
-		getclosestpointset(regpointset,polyshape);
-	% update rmse values
-	lastrmse = currentrmse;
-	currentrmse = sqrt(mean(dists.^2));
-	refreshdata
-	itern = itern + 1;
-	pause(0.05)
-end
+
+% find transform that minimises rmse
+[regtfm, currentrmse] = minrmse(regpointset,initialtfm,polyshape);
+
+% update reg point set and shape
+regpointset = transformpoints(acqpointset,regtfm);
+regshape = transformpoints(polyshape,regtfm);
+
+refreshdata
 
 fprintf('The current RMSE is %f\n',currentrmse)
