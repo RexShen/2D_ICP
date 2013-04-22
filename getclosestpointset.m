@@ -26,7 +26,7 @@ end
 function [closestlinepoint, dist] = getclosestlinepoint(point, vert1, vert2)
 a = point - vert1;
 b = vert2 - vert1;
-vert1toclosestpoint = unitise(b) * (dot(a,b)/norm(b));
+vert1toclosestpoint = rowunitise(b) * (dot(a,b)/norm(b));
 closestlinepoint = vert1 + vert1toclosestpoint;
 % check to make sure point lies between vertices
 c = closestlinepoint - vert1;

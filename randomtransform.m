@@ -1,6 +1,6 @@
 function [randtrans] = randomtransform(maxtrans, maxrot)
 
-rtr = unitise((rand(2,1)*2)-1)*maxtrans;
+rtr = rowunitise((rand(1,2)*2)-1)*maxtrans;
 transtfm = [1, 0, rtr(1); 0, 1, rtr(2); 0, 0, 1];
 
 rangle = ((rand*2)-1)*maxrot;
